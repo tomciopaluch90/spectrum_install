@@ -1,0 +1,59 @@
+#!/bin/bash
+
+copy_file() {
+    local environment="$1"
+    local file_name="$2"
+    local destination_path="$3"
+
+    # Check if the specified environment is valid
+    if [[ ! "DEV TE1 TE2 PRD" =~ "${environment}" ]]; then
+        echo "Invalid environment specified. It should be one of DEV, TE1, TE2, or PRD."
+        exit 1
+    fi
+
+    # Source path based on the environment
+    source_path="config/${environment}/${file_name}"
+
+    # Check if the source file exists
+    if [ ! -e "${source_path}" ]; then
+        echo "File '${file_name}' not found in the '${environment}' environment."
+        exit 1
+    fi
+
+    # Check if the destination file already exists
+    if [ -e "${destination_path}/${file_name}" ]; then
+        # Create a backup with timestamped extension
+        backup_file="${destination_path}/${file_name}_bak_$(date +"%Y%m%d%H%M%S")"
+        cp "${destination_path}/${file_name}" "${backup_file}"
+        echo "Backup created: ${backup_file}"
+    fi
+
+    # Copy the file to the specified destination path
+    cp "${source_path}" "${destination_path}"
+    
+    echo "File '${file_name}' successfully copied from '${environment}' to '${destination_path}'."
+}
+
+# Get the current hostname
+current_hostname=$(hostname)
+
+# Read the config.file and extract the relevant section based on the current environment
+while IFS='=' read -r key value; do
+    if [ "${key}" = "${current_hostname}" ]; then
+        environment="${value}"
+        break
+    fi
+done < "config.file"
+
+# Check if a valid environment was found
+if [ -z "${environment}" ]; then
+    echo "No environment found for the current hostname: ${current_hostname}"
+    exit 1
+fi
+
+# Execute the copy_file function with attributes from the second section of config.file
+while IFS=' ' read -r func_env file_name destination_path; do
+    if [ "${func_env}" = "${environment}" ]; then
+        copy_file "${func_env}" "${file_name}" "${destination_path}"
+    fi
+done < <(awk '/^End of config.file/{flag=0} flag; /DEV/{flag=1}' "config.file")
