@@ -52,8 +52,8 @@ if [ -z "${environment}" ]; then
 fi
 
 # Execute the copy_file function with attributes from the second section of config.file
-while IFS=' ' read -r func_env file_name destination_path; do
-    if [ "${func_env}" = "${environment}" ]; then
+while read -r func_name func_env file_name destination_path; do
+    if [ "${func_name}" = "copy_file" ] && [ "${func_env}" = "${environment}" ]; then
         copy_file "${func_env}" "${file_name}" "${destination_path}"
     fi
-done < <(awk '/^End of config.file/{flag=0} flag; /DEV/{flag=1}' "config.file")
+done < <(awk '/^End of config.file/{flag=0} flag; /copy_file/{flag=1}' "config.file")
