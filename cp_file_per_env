@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Function to copy a file
 copy_file() {
     local environment="$1"
     local file_name="$2"
@@ -34,6 +35,31 @@ copy_file() {
     echo "File '${file_name}' successfully copied from '${environment}' to '${destination_path}'."
 }
 
+# Function to change ownership of a file
+change_ownership() {
+    local environment="$1"
+    local user_and_group="$2"
+    local file_path="$3"
+
+    # Check if the specified environment is valid
+    if [[ ! "DEV TE1 TE2 PRD" =~ "${environment}" ]]; then
+        echo "Invalid environment specified. It should be one of DEV, TE1, TE2, or PRD."
+        exit 1
+    fi
+
+    # Parse user and group from the second parameter
+    IFS=':' read -r user group <<< "$user_and_group"
+
+    # If user or group is "-", set them to an empty string
+    [ "$user" == "-" ] && user=""
+    [ "$group" == "-" ] && group=""
+
+    # Change ownership of the file
+    chown "$user:$group" "$file_path"
+
+    echo "Ownership of '${file_path}' successfully changed to user='${user}', group='${group}'."
+}
+
 # Get the current hostname
 current_hostname=$(hostname)
 
@@ -51,7 +77,22 @@ if [ -z "${environment}" ]; then
     exit 1
 fi
 
-# Execute the copy_file function with attributes from the second section of config.file
-grep "copy_file ${environment}" "config.file" | while read -r line; do
-    eval "${line}"
-done
+# Execute the functions with attributes from the second section of config.file
+while read -r func_name func_env rest_of_line; do
+    if [ "${func_env}" = "${environment}" ]; then
+        case "${func_name}" in
+            "copy_file")
+                copy_file $rest_of_line
+                ;;
+            "another_task")
+                another_task $rest_of_line
+                ;;
+            "change_ownership")
+                change_ownership $rest_of_line
+                ;;
+            *)
+                echo "Unknown function: ${func_name}"
+                ;;
+        esac
+    fi
+done < <(awk '/^End of config.file/{flag=0} flag; /[^ ]/ && !/^#/ && !/copy_file/ && !/another_task/ && !/change_ownership/{flag=1} flag' "config.file")
