@@ -1,0 +1,29 @@
+#!/bin/bash
+
+copy_install_response() {
+    environment=$1
+    destination_path=$2
+
+    # Define paths
+    source_file="/tsm_configs/install_response_${environment}.xml"
+    destination="${destination_path}/install_response.xml"
+
+    # Check if source file exists
+    if [ -f "$source_file" ]; then
+        echo "Copying install_response_${environment}.xml to $destination..."
+
+        # Copy the file to the destination
+        cp "$source_file" "$destination"
+
+        echo "Copy complete."
+    else
+        echo "Error: Source file install_response_${environment}.xml not found."
+    fi
+}
+
+# Check if environment and destination path are provided as arguments
+if [ $# -eq 2 ]; then
+    copy_install_response "$1" "$2"
+else
+    echo "Usage: $0 <environment> <destination_path>"
+fi
