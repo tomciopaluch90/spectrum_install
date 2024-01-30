@@ -77,22 +77,16 @@ if [ -z "${environment}" ]; then
     exit 1
 fi
 
+# Get a list of defined functions in the script
+defined_functions=$(grep -E '^\w+\(\)' "$0" | awk -F '(' '{print $1}')
+
 # Execute the functions with attributes from the second section of config.file
 while read -r func_name func_env rest_of_line; do
     if [ "${func_env}" = "${environment}" ]; then
-        case "${func_name}" in
-            "copy_file")
-                copy_file $rest_of_line
-                ;;
-            "another_task")
-                another_task $rest_of_line
-                ;;
-            "change_ownership")
-                change_ownership $rest_of_line
-                ;;
-            *)
-                echo "Unknown function: ${func_name}"
-                ;;
-        esac
+        if [[ " $defined_functions " =~ " ${func_name} " ]]; then
+            "$func_name" $rest_of_line
+        else
+            echo "Unknown function: ${func_name}"
+        fi
     fi
-done < <(awk '/^End of config.file/{flag=0} flag; /[^ ]/ && !/^#/ && !/copy_file/ && !/another_task/ && !/change_ownership/{flag=1} flag' "config.file")
+done < <(awk '/^End of config.file/{flag=0} flag; /[^ ]/ && !/^#/ && !/^\w+\(/ {flag=1} flag' "config.file")
