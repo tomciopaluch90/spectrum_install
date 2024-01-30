@@ -39,8 +39,8 @@ current_hostname=$(hostname)
 
 # Read the config.file and extract the relevant section based on the current environment
 while IFS='=' read -r key value; do
-    if [ "${key}" = "${current_hostname}" ]; then
-        environment="${value}"
+    if [ "${value}" = "${current_hostname}" ]; then
+        environment="${key}"
         break
     fi
 done < "config.file"
