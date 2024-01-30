@@ -52,6 +52,6 @@ if [ -z "${environment}" ]; then
 fi
 
 # Execute the copy_file function with attributes from the second section of config.file
-grep "copy_file ${environment}" "config.file" | awk '{ print $2, $3, $4 }' | while read -r file_name destination_path; do
-    copy_file "${environment}" "${file_name}" "${destination_path}"
+grep "copy_file ${environment}" "config.file" | while read -r line; do
+    eval "${line}"
 done
